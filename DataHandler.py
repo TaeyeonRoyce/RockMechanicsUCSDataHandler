@@ -7,7 +7,7 @@ from math import pi
 from pandas.core.indexing import is_label_like
 
 ##시트 선택
-sheetList = ["u-1 ucs"]
+sheetList = ["u-2 ucs"]
 #"u-1 ucs" ,"u-2 ucs","u-3 ucs","u-4 ucs","u-5 ucs"
 ghResult=[]
 xlResult=[]
@@ -49,6 +49,8 @@ for sheetName in sheetList:
 
     def calculate_1(D, lateralStrain, axialStrain, axialLoad):
         for i in range(len(lateralStrain)):
+            if (lateralStrain[i] > 0 or axialStrain[i] < 0 or axialLoad[i] < 0) and i < 5000:
+                continue
             reslut = []
             #직경
             diameter = round(D*((1-lateralStrain[i]/1000000)),5)
@@ -69,6 +71,8 @@ for sheetName in sheetList:
 
     def calculate_2(D, lateralStrain,axialStrain, axialLoad):
         for i in range(len(lateralStrain)):
+            if (lateralStrain[i] > 0 or axialStrain[i] < 0 or axialLoad[i] < 0)  and i < 5000:
+                continue
             reslut = []
             #직경
             diameter = round(D*((1-lateralStrain[i]/1000000)),5)
@@ -77,11 +81,11 @@ for sheetName in sheetList:
             reslut.append(axialStress)
             axialStress_2.append(axialStress)
 
-            reslut.append(axialStrain[i]/100)
-            axialStrain_mm_2.append(axialStrain[i]/100)
+            reslut.append(axialStrain[i]/1000)
+            axialStrain_mm_2.append(axialStrain[i]/1000)
 
-            reslut.append(lateralStrain[i]/100)
-            lateralStrain_mm_2.append(lateralStrain[i]/100)
+            reslut.append(lateralStrain[i]/1000)
+            lateralStrain_mm_2.append(lateralStrain[i]/1000)
 
             reslut_2.append(reslut)
 
@@ -125,7 +129,8 @@ def compactingData(data, compactRange):
             isAxialEnd = True
         if len(compactedData[2]) > 1 and (compactedData[2][-1] - compactedData[2][-2] > 0.2):
             isLaterEnd = True
-        if (i > 10000) and i < len(data[0]) - 2 and abs(data[0][i]-data[0][-1])*3 < abs(data[0][i]-data[0][-1]):
+        if (i > 10000) and i < len(data[0]) and abs(data[0][i]-data[0][-1])*3 < abs(data[0][-1]-data[0][-2]):
+            isBreak = True
             if axialStrainSum > 0 and isAxialEnd == False:
                 compactedData[0].append(stressSum/cnt)
                 compactedData[1].append(axialStrainSum/cnt)
@@ -151,9 +156,34 @@ def compactingData(data, compactRange):
         else: 
             cnt += 1
         
-    maxPoint = compactedData[0].index(max(compactedData[0]))
     maxStress = max(compactedData[0])
     compactedData[4].append(maxStress)
+    # newNoiseData0 = []
+    # newNoiseData1 = []
+    # newNoiseData2 = []
+    # newNoiseData3 = []
+    # isBreak
+    # for i in range(len(compactedData[0])):
+    #     newNoiseData0.append(compactedData[0][i])
+    #     newNoiseData1.append(compactedData[1][i])
+    #     newNoiseData2.append(compactedData[2][i])
+    #     newNoiseData3.append(compactedData[3][i])
+    #     if compactedData[0][i] >= maxStress:
+    #         for j in range(1,10):
+    #             newNoiseData0.append(compactedData[0][i+j])
+    #             newNoiseData1.append(compactedData[1][i+j])
+    #             newNoiseData2.append(compactedData[2][i+j])
+    #             newNoiseData3.append(compactedData[3][i+j])
+    #             newNoiseData0.append(compactedData[0][i+j])
+    #             newNoiseData1.append(compactedData[1][i+j])
+    #             newNoiseData2.append(compactedData[2][i+j])
+    #             newNoiseData3.append(compactedData[3][i+j])
+    #         compactedData[0] = newNoiseData0
+    #         compactedData[1] = newNoiseData1
+    #         compactedData[2] = newNoiseData2
+    #         compactedData[3] = newNoiseData3
+    #         break
+
     for i in range(len(compactedData[0])):
         if compactedData[0][i] >= maxStress*0.4:
             compactedData[5].append([compactedData[1][i],compactedData[0][i]])
@@ -172,7 +202,7 @@ def compactingData(data, compactRange):
 
 
 
-ucsTestResultData = compactingData(ghResult[0],1)
+ucsTestResultData = compactingData(ghResult[1],20)
 ucsTestAxialStrain = ucsTestResultData[1]
 ucsTestAxialStress = ucsTestResultData[0]
 ucsTestLateralStrain = ucsTestResultData[2]
@@ -186,22 +216,20 @@ ax.spines['left'].set_position(('data', 0))
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)  
 
-ax.plot(ucsTestAxialStrain,ucsTestAxialStress,label='Stress-Axial Strain')
-ax.plot(ucsTestLateralStrain,ucsTestAxialStressToLateralStrain, label='Stress-Lateral Strain')
-plt.title("Axial Stress - Axial Strain Curve")
+ax.plot(ucsTestAxialStrain,ucsTestAxialStress,label='Stress-Axial Strain(%)')
+ax.plot(ucsTestLateralStrain,ucsTestAxialStressToLateralStrain, label='Stress-Lateral Strain(%)''$(10^{-1})$')
+plt.title("Axial Stress - Strain Curve")
 plt.grid(True)
-plt.rcParams['font.size'] = 10
+plt.rcParams['font.size'] = 8
 plt.legend(loc='upper right', ncol=1)
 plt.show()
 
 a= ucsLinearAxialStrain
 b= ucsLinearLateralStrain
 print(a)
-print(b)
-youngsModulusA = round((a[1][1]-a[0][1])/(a[1][0]- a[0][0]),5)
-youngsModulusL = abs(round((b[1][1]-b[0][1])/(b[1][0]- b[0][0]),5))
-possionRatio = round(youngsModulusA/youngsModulusL,5)
-print(ucs, youngsModulusA, possionRatio)
-# print(ucs)
-    
 
+youngsModulusL = round((a[1][1]-a[0][1])/(a[1][0]- a[0][0]),5)
+youngsModulusA = abs(round((b[1][1]-b[0][1])/(b[1][0]- b[0][0]),5))
+possionRatio = round(youngsModulusA/youngsModulusL,5)
+print(youngsModulusL)
+print(ucs, youngsModulusA, possionRatio)
